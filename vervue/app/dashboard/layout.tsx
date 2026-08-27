@@ -32,12 +32,6 @@ export default function DashboardLayout({
           {children}
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            © 2026 Vervue. Built by JuanicoDevSolutions.
-          </p>
-          <ThemeSwitcher />
-        </footer>
       </div>
     </main>
   );
