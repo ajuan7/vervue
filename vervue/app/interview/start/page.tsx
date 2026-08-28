@@ -23,7 +23,7 @@ export default function InterviewStartPage() {
     const data = await res.json();
 
     if (data.sessionId) {
-      router.push(`/interview/${data.sessionId}/question`);
+      router.push(`/interview/${data.sessionId}/question/1`);
     }
   }
 
