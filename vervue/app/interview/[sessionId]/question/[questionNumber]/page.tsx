@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { MessageBox } from "@/components/message-box";
 
 export const instant = false;
 export default async function QuestionPage(props: {
@@ -23,7 +24,7 @@ export default async function QuestionPage(props: {
         .single();
 
     if (sessionErr || !session) {
-        return <div>Invalid session.</div>;
+        return <MessageBox variant="error" title="Invalid session" description="This interview session could not be found."/>;
     }
 
     // Fetch all questions for this role
@@ -35,7 +36,7 @@ export default async function QuestionPage(props: {
 
     if (qErr) {
         console.error("QUESTION ERROR:", qErr);
-        return <div>Error loading questions.</div>;
+        return <MessageBox variant="error" title="Error loading questions"/>;
     }
 
     const totalQuestions = 6;
@@ -45,7 +46,7 @@ export default async function QuestionPage(props: {
     const question = limitedQuestions[qNum - 1];
 
     if (!question) {
-         return <div>Interview complete!</div>;    
+         return <MessageBox variant="success" title="Interview Complete!" description="You've completed all the questions."/>;    
     }
 
 
