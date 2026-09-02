@@ -1,4 +1,6 @@
 import { MessageBox } from "@/components/message-box";
+
+// Tells next.js not to pre-render the route 
 export const instant = false;
 
 export  default async function CompletePage({ params }: { params: { sessionId: string } }) {
