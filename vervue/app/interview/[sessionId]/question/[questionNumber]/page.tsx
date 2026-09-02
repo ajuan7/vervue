@@ -24,7 +24,7 @@ export default async function QuestionPage(props: {
         .single();
 
     if (sessionErr || !session) {
-        return <MessageBox variant="error" title="Invalid session" description="This interview session could not be found."/>;
+        return <MessageBox variant="error" title="Invalid session" description="This interview session could not be found." />;
     }
 
     // Fetch all questions for this role
@@ -36,7 +36,7 @@ export default async function QuestionPage(props: {
 
     if (qErr) {
         console.error("QUESTION ERROR:", qErr);
-        return <MessageBox variant="error" title="Error loading questions"/>;
+        return <MessageBox variant="error" title="Error loading questions" />;
     }
 
     const totalQuestions = 6;
@@ -46,7 +46,22 @@ export default async function QuestionPage(props: {
     const question = limitedQuestions[qNum - 1];
 
     if (!question) {
-         return <MessageBox variant="success" title="Interview Complete!" description="You've completed all the questions."/>;    
+        return (
+            <div className="max-w-xl mx-auto py-10 text-center">
+                <MessageBox
+                    variant="success"
+                    title="Interview Complete!"
+                    description="You've answered all the questions."
+                />
+
+                <a
+                    href={`/interview/${sessionId}/summary`}
+                    className="mt-6 inline-block bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                    View Summary
+                </a>
+            </div>
+        );
     }
 
 
