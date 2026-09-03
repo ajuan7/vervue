@@ -80,7 +80,7 @@ export default async function SummaryPage({
     }
 
     return (
-        <div className="max-w-2xl mx-auto py-10">
+        <div className="max-w-2xl mx-auto px-5 py-10">
             <h1 className="text-3xl font-bold mb-4">Interview Summary</h1>
             <p className="text-gray-600 mb-8">
                 Role: <strong>{session.role}</strong>
@@ -144,12 +144,12 @@ export default async function SummaryPage({
                 );
             })}
 
-            <a
-                href="/dashboard"
-                className="inline-block mt-6 bg-gray-800 text-white px-4 py-2 rounded"
+        <a
+            href="/dashboard"
+            className="inline-block mt-6 bg-gray-800 text-white px-4 py-2 rounded"
             >
-                Back to Dashboard
-            </a>
+            Back to Dashboard
+        </a>
         </div >
     );
 }

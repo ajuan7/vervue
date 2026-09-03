@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ScoreBar } from "@/components/interview/score-bar";
 import { Fraunces } from "next/font/google";
+import { createClient } from "@/lib/supabase/server";
+
+export const instant = false;
 
 const fraunces = Fraunces({
     subsets: ["latin"],
@@ -29,7 +32,10 @@ const steps = [
     },
 ];
 
-export default function Home() {
+export default async function Home() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     return (
         <main className="min-h-screen flex flex-col items-center geistSans antialiased">
             <div className="w-full max-w-5xl px-5 py-16 sm:py-24 flex flex-col gap-24">
@@ -48,12 +54,20 @@ export default function Home() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                            <Button asChild size="lg">
-                                <a href="/auth/sign-up">Start practicing</a>
-                            </Button>
-                            <Button asChild variant="outline" size="lg">
-                                <a href="/auth/login">Sign in</a>
-                            </Button>
+                            {user ? (
+                                <Button asChild size="lg">
+                                    <a href="/dashboard">Go to dashboard</a>
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button asChild size="lg">
+                                        <a href="/auth/sign-up">Start practicing</a>
+                                    </Button>
+                                    <Button asChild variant="outline" size="lg">
+                                        <a href="/auth/login">Sign in</a>
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
 import { generateSessionFeedback } from "@/lib/interview/generateFeedback";
+import { Button } from "@/components/ui/button";
 
 export const instant = false;
 
@@ -49,9 +50,7 @@ export default async function QuestionPage(props: {
         return <MessageBox variant="error" title="Error loading progress" />;
     }
 
-
     const currentPosition = (answeredCount ?? 0) + 1;
-
 
     if (qNum !== currentPosition) {
         redirect(`/interview/${sessionId}/question/${currentPosition}`);
@@ -152,30 +151,34 @@ export default async function QuestionPage(props: {
 
     // Render question
     return (
-        <div className="max-w-xl mx-auto py-10">
-            <h1 className="text-2xl font-bold">
-                Question {questionNumber}
-            </h1>
-            <p className="text-sm text-gray-500 mb-3">
+        <div className="max-w-xl mx-auto px-5 py-10 sm:py-16">
+            <p className="text-sm text-muted-foreground mb-2">
                 Question {qNum} of {totalQuestions}
             </p>
 
-            <p className="mb-6">{question.question}</p>
+            {/* Progress bar */}
+            <div className="h-1 w-full bg-border mb-8">
+                <div
+                    className="h-1 bg-foreground"
+                    style={{ width: `${(qNum / totalQuestions) * 100}%` }}
+                />
+            </div>
 
-            <form action={submitAnswer}>
+            <h1 className="text-xl sm:text-2xl font-semibold mb-8 leading-snug">
+                {question.question}
+            </h1>
+
+            <form action={submitAnswer} className="flex flex-col gap-4">
                 <textarea
                     name="answer"
                     required
-                    className="w-full border rounded p-3 mb-4"
-                    rows={5}
+                    className="w-full border border-border bg-transparent p-3 text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-foreground"
+                    rows={6}
                 />
 
-                <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                >
+                <Button type="submit" className="w-full sm:w-fit">
                     Submit Answer
-                </button>
+                </Button>
             </form>
         </div>
     );
