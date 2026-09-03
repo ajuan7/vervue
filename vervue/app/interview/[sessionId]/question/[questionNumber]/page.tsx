@@ -37,6 +37,26 @@ export default async function QuestionPage(props: {
     // Use the shuffled locked-in order stored on the session
     const questionIds: string[] = session.question_ids ?? [];
     const totalQuestions = questionIds.length;
+
+    // Figure out how many questions the user has actually answered
+    const { count: answeredCount, error: countErr } = await supabase
+        .from("responses")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", sessionId);
+
+    if (countErr) {
+        console.error("ANSWERED COUNT ERROR:", countErr);
+        return <MessageBox variant="error" title="Error loading progress" />;
+    }
+
+
+    const currentPosition = (answeredCount ?? 0) + 1;
+
+
+    if (qNum !== currentPosition) {
+        redirect(`/interview/${sessionId}/question/${currentPosition}`);
+    }
+
     const currentQuestionId = questionIds[qNum - 1];
 
     if (!currentQuestionId) {
