@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+export const instant = false;
+
 export default async function SessionPage({ params }: { params: { sessionId: string } }) {
   // Create Supabase server client tied to cookies
   const supabase = await createClient();
