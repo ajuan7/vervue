@@ -15,7 +15,6 @@ export function AuthButton() {
       setUser(data.user);
     });
 
-    // Listen for login/logout changes
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
       supabase.auth.getUser().then(({ data }) => {
         setUser(data.user);
@@ -28,8 +27,10 @@ export function AuthButton() {
   }, []);
 
   return user ? (
-    <div className="flex items-center gap-4">
-      Hey, {user.email}!
+    <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <span className="hidden sm:inline truncate max-w-[180px] text-muted-foreground">
+        Hey, {user.email}!
+      </span>
       <LogoutButton />
     </div>
   ) : (
