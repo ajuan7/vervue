@@ -4,6 +4,7 @@ import { MessageBox } from "@/components/message-box";
 import { generateSessionFeedback } from "@/lib/interview/generateFeedback";
 
 export const instant = false;
+
 export default async function QuestionPage(props: {
     params: Promise<{ sessionId: string; questionNumber: string }>;
 }) {
@@ -28,39 +29,28 @@ export default async function QuestionPage(props: {
         return <MessageBox variant="error" title="Invalid session" description="This interview session could not be found." />;
     }
 
-    // Fetch all questions for this role
-    const { data: questions, error: qErr } = await supabase
-        .from("interview_questions")
-        .select("*")
-        .eq("role", session.role)        // match the session's role
-        .order("id", { ascending: true }); // stable ordering
-
-    if (qErr) {
-        console.error("QUESTION ERROR:", qErr);
-        return <MessageBox variant="error" title="Error loading questions" />;
+    // Prevent access to completed sessions
+    if (session.completed_at) {
+        redirect(`/interview/${sessionId}/complete`);
     }
 
-    const totalQuestions = 6;
-    const limitedQuestions = questions.slice(0, totalQuestions);
+    // Use the shuffled locked-in order stored on the session
+    const questionIds: string[] = session.question_ids ?? [];
+    const totalQuestions = questionIds.length;
+    const currentQuestionId = questionIds[qNum - 1];
 
-    // Pick the question by index (1-based)
-    const question = limitedQuestions[qNum - 1];
-
-    if (!question) {
+    if (!currentQuestionId) {
         // All questions answered — mark the session complete
         const { error: completeErr } = await supabase
             .from("interview_sessions")
             .update({ completed_at: new Date().toISOString() })
             .eq("id", sessionId)
-            .is("completed_at", null); // no-op if something else already completed it
+            .is("completed_at", null);
 
         if (completeErr) {
             console.error("COMPLETE ERROR:", completeErr);
         }
 
-        // Generate AI feedback
-        // reaches the summary page
-        // the summary page already has "No feedback yet" fallback.
         try {
             await generateSessionFeedback(sessionId, user.id);
         } catch (err) {
@@ -70,6 +60,17 @@ export default async function QuestionPage(props: {
         redirect(`/interview/${sessionId}/complete`);
     }
 
+    // Fetch just this one question by its locked-in id
+    const { data: question, error: qErr } = await supabase
+        .from("interview_questions")
+        .select("*")
+        .eq("id", currentQuestionId)
+        .single();
+
+    if (qErr || !question) {
+        console.error("QUESTION ERROR:", qErr);
+        return <MessageBox variant="error" title="Error loading question" />;
+    }
 
     // Handle form submission
     async function submitAnswer(formData: FormData) {
@@ -78,21 +79,54 @@ export default async function QuestionPage(props: {
         const supabase = await createClient();
         const answer = formData.get("answer") as string;
 
-        const { error } = await supabase
-            .from("responses")
-            .insert({
-                session_id: sessionId,
-                question_id: question.id,
-                user_id: user?.id,
-                response_text: answer,
-            });
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) redirect("/auth/login");
 
-        if (error) {
-            console.error("INSERT ERROR:", error);
-            return;
+        const { data: session } = await supabase
+            .from("interview_sessions")
+            .select("id, completed_at")
+            .eq("id", sessionId)
+            .eq("user_id", user.id)
+            .single();
+
+        if (!session || session.completed_at) {
+            redirect(`/interview/${sessionId}/complete`);
         }
 
-        // Move to next question
+        // Prevent duplicate rows if this question is resubmitted
+        const { data: existing } = await supabase
+            .from("responses")
+            .select("id")
+            .eq("session_id", sessionId)
+            .eq("question_id", question.id)
+            .maybeSingle();
+
+        if (existing) {
+            const { error: updateErr } = await supabase
+                .from("responses")
+                .update({ response_text: answer })
+                .eq("id", existing.id);
+
+            if (updateErr) {
+                console.error("UPDATE ERROR:", updateErr);
+                return;
+            }
+        } else {
+            const { error: insertErr } = await supabase
+                .from("responses")
+                .insert({
+                    session_id: sessionId,
+                    question_id: question.id,
+                    user_id: user.id,
+                    response_text: answer,
+                });
+
+            if (insertErr) {
+                console.error("INSERT ERROR:", insertErr);
+                return;
+            }
+        }
+
         redirect(`/interview/${sessionId}/question/${qNum + 1}`);
     }
 
