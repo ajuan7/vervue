@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
+import { generateSessionFeedback } from "@/lib/interview/generateFeedback";
 
 export const instant = false;
 export default async function QuestionPage(props: {
@@ -46,7 +47,27 @@ export default async function QuestionPage(props: {
     const question = limitedQuestions[qNum - 1];
 
     if (!question) {
-        redirect(`/interview/${sessionId}/complete`)
+        // All questions answered — mark the session complete
+        const { error: completeErr } = await supabase
+            .from("interview_sessions")
+            .update({ completed_at: new Date().toISOString() })
+            .eq("id", sessionId)
+            .is("completed_at", null); // no-op if something else already completed it
+
+        if (completeErr) {
+            console.error("COMPLETE ERROR:", completeErr);
+        }
+
+        // Generate AI feedback
+        // reaches the summary page
+        // the summary page already has "No feedback yet" fallback.
+        try {
+            await generateSessionFeedback(sessionId, user.id);
+        } catch (err) {
+            console.error("FEEDBACK GENERATION ERROR:", err);
+        }
+
+        redirect(`/interview/${sessionId}/complete`);
     }
 
 
