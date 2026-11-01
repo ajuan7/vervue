@@ -1,18 +1,42 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Footer } from "../components/footer";
 import { Nav } from "../components/nav";
-
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+import {
+  AUTHOR_NAME,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Vervue",
-  description: "Practice. Improve. Interview with confidence.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} | AI interview practice`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  creator: AUTHOR_NAME,
+  authors: [{ name: AUTHOR_NAME, url: `${SITE_URL}/about` }],
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | AI interview practice`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: "en_AU",
+  },
+  twitter: { card: "summary_large_image" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 const geistSans = Geist({
@@ -29,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <Nav/>
+        <Nav />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -37,7 +61,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <Footer/>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
