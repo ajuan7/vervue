@@ -25,7 +25,7 @@ export async function recordAnswer(
         if (error) return { error };
     }
 
-    // Start the clock for the next question
+    // Start the clock for the next question    
     const { error: clockErr } = await supabase
         .from("interview_sessions")
         .update({ question_started_at: new Date().toISOString() })
