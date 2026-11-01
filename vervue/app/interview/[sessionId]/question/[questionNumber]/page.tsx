@@ -2,7 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
 import { generateSessionFeedback } from "@/lib/interview/generateFeedback";
-import { Button } from "@/components/ui/button";
+import { recordAnswer } from "@/lib/interview/recordAnswer";
+import { AnswerForm } from "@/components/interview/answer-form";
+import {
+    GRACE_SECONDS,
+    NO_ANSWER_TEXT,
+    getElapsedSeconds,
+    getTimeLimit,
+} from "@/lib/interview/timer";
 
 export const instant = false;
 
@@ -91,19 +98,47 @@ export default async function QuestionPage(props: {
         return <MessageBox variant="error" title="Error loading question" />;
     }
 
+    // Timer 
+    const timeLimit = getTimeLimit(question.difficulty);
+
+    // Sessions created before timers existed have no start time yet
+    let startedAt: string | null = session.question_started_at;
+    if (!startedAt) {
+        startedAt = new Date().toISOString();
+        await supabase
+            .from("interview_sessions")
+            .update({ question_started_at: startedAt })
+            .eq("id", sessionId)
+            .is("completed_at", null);
+    }
+
+    const secondsLeft = Math.floor(timeLimit - getElapsedSeconds(startedAt));
+
+    // Time ran out while the user was away. Forfeit this question only;
+    // the next one gets a fresh clock.
+    if (secondsLeft <= 0) {
+        await recordAnswer(supabase, {
+            sessionId,
+            userId: user.id,
+            questionId: question.id,
+            text: NO_ANSWER_TEXT,
+        });
+        redirect(`/interview/${sessionId}/question/${qNum + 1}`);
+    }
+
     // Handle form submission
     async function submitAnswer(formData: FormData) {
         "use server";
 
         const supabase = await createClient();
-        const answer = formData.get("answer") as string;
+        const answer = ((formData.get("answer") as string) ?? "").trim();
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) redirect("/auth/login");
 
         const { data: session } = await supabase
             .from("interview_sessions")
-            .select("id, completed_at")
+            .select("id, completed_at, question_started_at")
             .eq("id", sessionId)
             .eq("user_id", user.id)
             .single();
@@ -112,38 +147,22 @@ export default async function QuestionPage(props: {
             redirect(`/interview/${sessionId}/complete`);
         }
 
-        // Prevent duplicate rows if this question is resubmitted
-        const { data: existing } = await supabase
-            .from("responses")
-            .select("id")
-            .eq("session_id", sessionId)
-            .eq("question_id", question.id)
-            .maybeSingle();
+        // Enforce the limit on the server as the browser clock can't be trusted
+        const tooLate =
+            getElapsedSeconds(session.question_started_at) > timeLimit + GRACE_SECONDS;
 
-        if (existing) {
-            const { error: updateErr } = await supabase
-                .from("responses")
-                .update({ response_text: answer })
-                .eq("id", existing.id);
+        const text = tooLate || answer === "" ? NO_ANSWER_TEXT : answer;
 
-            if (updateErr) {
-                console.error("UPDATE ERROR:", updateErr);
-                return;
-            }
-        } else {
-            const { error: insertErr } = await supabase
-                .from("responses")
-                .insert({
-                    session_id: sessionId,
-                    question_id: question.id,
-                    user_id: user.id,
-                    response_text: answer,
-                });
+        const { error } = await recordAnswer(supabase, {
+            sessionId,
+            userId: user.id,
+            questionId: question.id,
+            text,
+        });
 
-            if (insertErr) {
-                console.error("INSERT ERROR:", insertErr);
-                return;
-            }
+        if (error) {
+            console.error("SAVE ANSWER ERROR:", error);
+            return;
         }
 
         redirect(`/interview/${sessionId}/question/${qNum + 1}`);
@@ -168,18 +187,7 @@ export default async function QuestionPage(props: {
                 {question.question}
             </h1>
 
-            <form action={submitAnswer} className="flex flex-col gap-4">
-                <textarea
-                    name="answer"
-                    required
-                    className="w-full border border-border bg-transparent p-3 text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-foreground"
-                    rows={6}
-                />
-
-                <Button type="submit" className="w-full sm:w-fit">
-                    Submit Answer
-                </Button>
-            </form>
+            <AnswerForm key={qNum} action={submitAnswer} secondsLeft={secondsLeft} />
         </div>
     );
 }
