@@ -2,8 +2,24 @@ import { Button } from "@/components/ui/button";
 import { ScoreBar } from "@/components/interview/score-bar";
 import { Fraunces } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, AUTHOR_NAME } from "@/lib/site";
 
 export const instant = false;
+export const metadata: Metadata = {
+    alternates: { canonical: "/" },
+};
+
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    applicationCategory: "EducationalApplication",
+    operatingSystem: "Any",
+    author: { "@type": "Person", name: AUTHOR_NAME, url: `${SITE_URL}/about` },
+};
 
 const fraunces = Fraunces({
     subsets: ["latin"],
@@ -38,6 +54,13 @@ export default async function Home() {
 
     return (
         <main className="min-h-screen flex flex-col items-center geistSans antialiased">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+                }}
+            />
+            
             <div className="w-full max-w-5xl px-5 py-16 sm:py-24 flex flex-col gap-24">
 
                 {/* Hero */}
