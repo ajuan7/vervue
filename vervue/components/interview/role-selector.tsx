@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const ROLES = ["Software Engineer", "Product Manager", "Data Analyst", "Cyber Security"];
+const ROLES = ["Software Engineer", "Product Manager", "Data Analyst", "Cyber Security", "Behavioural"];
 
 // Handling UI highlighting for selected role. No proper logic involved
 export function RoleSelector({ onSelect }: { onSelect: (role: string) => void }) {
