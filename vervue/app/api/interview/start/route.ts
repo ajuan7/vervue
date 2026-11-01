@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const DAILY_SESSION_LIMIT = 5;
+
 function shuffle<T>(array: T[]): T[] {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -29,6 +31,26 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Each completed session triggers up to 6 Gemini API calls, so cap how many
+    // sessions a single user can start in a rolling 24h window before we spend
+    // on their behalf.
+    const rateLimitWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: recentSessionCount, error: rateLimitErr } = await supabase
+        .from("interview_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("started_at", rateLimitWindowStart);
+
+    if (rateLimitErr) {
+        return NextResponse.json({ error: rateLimitErr.message }, { status: 500 });
+    }
+    if ((recentSessionCount ?? 0) >= DAILY_SESSION_LIMIT) {
+        return NextResponse.json(
+            { error: `You've reached the limit of ${DAILY_SESSION_LIMIT} interview sessions per day. Please try again later.` },
+            { status: 429 }
+        );
     }
 
     // Fetch every question id for this role
