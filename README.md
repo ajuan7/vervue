@@ -32,13 +32,17 @@ Vervue will focus on areas commonly assessed during behavioural interviews, incl
 
 - Text-based behavioural interview practice
 - Role-specific interview questions
-- Realistic workplace scenarios
-- AI-assisted feedback
+- Realistic workplace scenarios (To-do)
+- AI-assisted feedback 
 - STAR method evaluation
 - Response scoring
 - Interview history
 - Progress tracking
-- Personalised areas for improvement
+- Timed questions to mimic real interviews
+
+## Future Implementation
+- AI follow up questions
+- Dashboard summary of progress
 
 ## Tech Stack
 
