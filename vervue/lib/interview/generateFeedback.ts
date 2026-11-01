@@ -27,14 +27,29 @@ const feedbackSchema = {
     required: ["strengths", "weaknesses", "improvement_tips", "star_score"],
 };
 
-async function callGemini(question: string, answer: string): Promise<FeedbackResult> {
+// Evaluation against STAR structure for behaviourals
+function getRubric(role: string): string {
+    if (role === "Behavioural") {
+        return `Evaluate the answer against the STAR structure (Situation, Task, Action, Result). Say which parts are missing or weak. Check that the answer is about the candidate's own actions ("I", not "we") and that the result is specific or measurable. A vague answer with no clear result should score 2 or lower. Score from 1 to 5 stars.`;
+    }
+
+    return `Evaluate the answer on clarity, relevance, and depth. Score from 1 to 5 stars.`;
+}
+
+async function callGemini(
+    question: string,
+    answer: string,
+    role: string
+): Promise<FeedbackResult> {
     const prompt = `You are an expert interview coach reviewing a candidate's answer.
 
 Question: ${question}
 
 Candidate's Answer: ${answer}
 
-Evaluate the answer on clarity, relevance, and depth. Give specific, actionable feedback — not generic advice. Score from 1 to 5 stars.`;
+Evaluate the answer on clarity, relevance, and depth. Give specific, actionable feedback — not generic advice. Score from 1 to 5 stars.
+
+${getRubric(role)} Give specific, actionable feedback, not generic advice.`;
 
     const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
@@ -76,6 +91,19 @@ Evaluate the answer on clarity, relevance, and depth. Give specific, actionable 
 export async function generateSessionFeedback(sessionId: string, userId: string) {
     const supabase = await createClient();
 
+    // The session role decides which rubric the AI grades against
+    const { data: session, error: sessionErr } = await supabase
+        .from("interview_sessions")
+        .select("role")
+        .eq("id", sessionId)
+        .single();
+
+    if (sessionErr || !session) {
+        throw new Error(sessionErr?.message ?? "Session not found");
+    }
+
+    const role: string = session.role;
+
     const { data: responses, error: respErr } = await supabase
         .from("responses")
         .select(`
@@ -110,7 +138,7 @@ export async function generateSessionFeedback(sessionId: string, userId: string)
     const results = await Promise.allSettled(
         pending.map(async (r) => {
             const questionText = r.interview_questions?.question ?? "Unknown question";
-            const feedback = await callGemini(questionText, r.response_text);
+            const feedback = await callGemini(questionText, r.response_text, role);
 
             const { error: insertErr } = await supabase.from("feedback").insert({
                 response_id: r.id,
