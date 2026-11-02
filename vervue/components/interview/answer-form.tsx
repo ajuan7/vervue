@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 function formatTime(totalSeconds: number) {
     const minutes = Math.floor(totalSeconds / 60);
@@ -65,12 +66,7 @@ export function AnswerForm({
                 rows={5}
             />
 
-            <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-                Submit Answer
-            </button>
+            <SubmitButton className="w-full sm:w-fit">Submit Answer</SubmitButton>
         </form>
     );
 }
