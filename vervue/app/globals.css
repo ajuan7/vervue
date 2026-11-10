@@ -94,3 +94,19 @@
     animation: none;
   }
 }
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 20; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-check-draw {
+  stroke-dasharray: 20;
+  animation: check-draw 0.5s 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-check-draw {
+    animation: none;
+  }
+}
