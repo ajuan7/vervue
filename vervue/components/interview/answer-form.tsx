@@ -19,6 +19,7 @@ export function AnswerForm({
     const formRef = useRef<HTMLFormElement>(null);
     const submittedRef = useRef(false);
     const [remaining, setRemaining] = useState(secondsLeft);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         // Count down to a fixed deadline so a throttled background tab doesn't drift
@@ -47,21 +48,34 @@ export function AnswerForm({
         <form
             ref={formRef}
             action={action}
-            onSubmit={() => {
+            onSubmit={(e) => {
+                const text = new FormData(e.currentTarget).get("answer");
+                // The timer is allowed to submit an empty answer but a manual submit is not
+                if (!submittedRef.current && String(text ?? "").trim() === "") {
+                    e.preventDefault();
+                    setError("Write an answer before submitting.");
+                    return;
+                }
                 submittedRef.current = true;
             }}
         >
             <p
-                className={`text-sm mb-2 tabular-nums ${
-                    remaining <= 30 ? "text-red-600" : "text-gray-500"
-                }`}
+                className={`text-sm mb-2 tabular-nums ${remaining <= 30 ? "text-red-600" : "text-gray-500"
+                    }`}
             >
                 Time left: {formatTime(remaining)}
             </p>
 
+            {error && (
+                <p role="alert" className="text-sm text-red-600 mb-2">
+                    {error}
+                </p>
+            )}
+
             <textarea
                 name="answer"
-                required
+                maxLength={4000}
+                onChange={() => error && setError("")}
                 className="w-full border rounded p-3 mb-4"
                 rows={5}
             />
