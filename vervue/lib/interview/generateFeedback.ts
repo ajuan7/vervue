@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 const GEMINI_MODEL = "gemini-3.5-flash";
@@ -86,10 +87,11 @@ ${getRubric(role)} Give specific, actionable feedback, not generic advice.`;
 
 // Generates AI feedback for every response in a session that doesn't
 // already have feedback, and stores the results in the `feedback` table.
+export async function generateSessionFeedback(sessionId: string, userId: string, client?: SupabaseClient) {
+    
+    // Either use the client passed in or create new one
+    const supabase = client ?? (await createClient());
 
-
-export async function generateSessionFeedback(sessionId: string, userId: string) {
-    const supabase = await createClient();
 
     // The session role decides which rubric the AI grades against
     const { data: session, error: sessionErr } = await supabase

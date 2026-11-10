@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { firstOf } from "@/lib/interview/firstOf";
 
 export type SessionRow = {
     id: string;
@@ -9,7 +10,7 @@ export type SessionRow = {
 
 type ResponseWithFeedback = {
     session_id: string;
-    feedback: { star_score: number }[] | null;
+    feedback: { star_score: number } | { star_score: number }[] | null;
 };
 
 export type DashboardSession = SessionRow & {
@@ -44,7 +45,7 @@ export async function getDashboardData(userId: string) {
 
         const grouped = new Map<string, number[]>();
         for (const r of responses ?? []) {
-            const score = r.feedback?.[0]?.star_score;
+            const score = firstOf(r.feedback)?.star_score;
             if (score === undefined) continue;
             const existing = grouped.get(r.session_id) ?? [];
             existing.push(score);
