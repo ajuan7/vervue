@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
 import { redirect } from "next/navigation";
 import { AutoRefresh } from "@/components/interview/auto-refresh";
+import { firstOf } from "@/lib/interview/firstOf";
 
 export const instant = false;
 
@@ -17,7 +18,7 @@ type ResponseRow = {
     question_id: string;
     response_text: string;
     interview_questions: { question: string } | null;
-    feedback: Feedback[] | null;
+    feedback: Feedback | Feedback[] | null;
 };
 
 function scoreStyle(score: number) {
@@ -104,7 +105,7 @@ export default async function SummaryPage({
     }
 
     const scores = responses
-        .map((r) => r.feedback?.[0]?.star_score)
+        .map((r) => firstOf(r.feedback)?.star_score)
         .filter((s): s is number => typeof s === "number");
     const average = scores.length
         ? scores.reduce((a, b) => a + b, 0) / scores.length
@@ -118,7 +119,7 @@ export default async function SummaryPage({
         "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
     
     // Grading runs in the background, so keep refreshing until every answer has feedback
-    const waiting = responses.some((r) => !r.feedback?.length);
+    const waiting = responses.some((r) => !firstOf(r.feedback));
 
     return (
             <div className="max-w-2xl mx-auto px-5 py-10">
@@ -183,7 +184,7 @@ export default async function SummaryPage({
 
             {/* Question cards */}
             {responses.map((r, idx) => {
-                const fb = r.feedback?.[0];
+                const fb = firstOf(r.feedback);
                 const style = fb ? scoreStyle(fb.star_score) : null;
                 const base = 400 + Math.min(idx, 3) * 150;
 
