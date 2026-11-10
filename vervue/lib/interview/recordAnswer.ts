@@ -6,24 +6,16 @@ export async function recordAnswer(
 ) {
     const { sessionId, userId, questionId, text } = params;
 
-    // Answers are final so if a row already exists, don't overwrite it
-    const { data: existing } = await supabase
-        .from("responses")
-        .select("id")
-        .eq("session_id", sessionId)
-        .eq("question_id", questionId)
-        .maybeSingle();
+    // Answers are final. The unique(session_id, question_id) rule stops a double
+    // submit from saving twice, and 23505 just means it is already answered
+    const { error } = await supabase.from("responses").insert({
+        session_id: sessionId,
+        question_id: questionId,
+        user_id: userId,
+        response_text: text,
+    });
 
-    if (!existing) {
-        const { error } = await supabase.from("responses").insert({
-            session_id: sessionId,
-            question_id: questionId,
-            user_id: userId,
-            response_text: text,
-        });
-
-        if (error) return { error };
-    }
+    if (error && error.code !== "23505") return { error };
 
     // Start the clock for the next question    
     const { error: clockErr } = await supabase
