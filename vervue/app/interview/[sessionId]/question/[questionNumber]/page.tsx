@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
-import { generateSessionFeedback } from "@/lib/interview/generateFeedback";
+import { completeSession } from "@/lib/interview/completeSession";
 import { recordAnswer } from "@/lib/interview/recordAnswer";
 import { AnswerForm } from "@/components/interview/answer-form";
 import {
@@ -12,6 +12,9 @@ import {
 } from "@/lib/interview/timer";
 
 export const instant = false;
+
+// Gives the background grading time to finish on vercel
+export const maxDuration = 60;
 
 export default async function QuestionPage(props: {
     params: Promise<{ sessionId: string; questionNumber: string }>;
@@ -66,23 +69,8 @@ export default async function QuestionPage(props: {
     const currentQuestionId = questionIds[qNum - 1];
 
     if (!currentQuestionId) {
-        // All questions answered — mark the session complete
-        const { error: completeErr } = await supabase
-            .from("interview_sessions")
-            .update({ completed_at: new Date().toISOString() })
-            .eq("id", sessionId)
-            .is("completed_at", null);
-
-        if (completeErr) {
-            console.error("COMPLETE ERROR:", completeErr);
-        }
-
-        try {
-            await generateSessionFeedback(sessionId, user.id);
-        } catch (err) {
-            console.error("FEEDBACK GENERATION ERROR:", err);
-        }
-
+        // All questions answered so complete the session. Grading will run in the background
+        await completeSession(supabase, sessionId, user.id);
         redirect(`/interview/${sessionId}/complete`);
     }
 
@@ -163,6 +151,12 @@ export default async function QuestionPage(props: {
         if (error) {
             console.error("SAVE ANSWER ERROR:", error);
             return;
+        }
+
+
+        if (qNum >= totalQuestions) {
+            await completeSession(supabase, sessionId, user.id);
+            redirect(`/interview/${sessionId}/complete`);
         }
 
         redirect(`/interview/${sessionId}/question/${qNum + 1}`);
