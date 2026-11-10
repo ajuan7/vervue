@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { MessageBox } from "@/components/message-box";
 import { redirect } from "next/navigation";
+import { AutoRefresh } from "@/components/interview/auto-refresh";
 
 export const instant = false;
 
@@ -115,9 +116,14 @@ export default async function SummaryPage({
         "rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 dark:shadow-none";
     const smallLabel =
         "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
+    
+    // Grading runs in the background, so keep refreshing until every answer has feedback
+    const waiting = responses.some((r) => !r.feedback?.length);
 
     return (
-        <div className="max-w-2xl mx-auto px-5 py-10">
+            <div className="max-w-2xl mx-auto px-5 py-10">
+                {waiting && <AutoRefresh />}
+
             {/* Header */}
             <div className="animate-fade-up mb-8">
                 <p className="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -263,8 +269,8 @@ export default async function SummaryPage({
                         ) : (
                             <MessageBox
                                 variant="warning"
-                                title="No feedback yet"
-                                description="AI feedback has not been generated for this response."
+                                title="Feedback on the way"
+                                description="Your feedback is still being generated. This page will update on its own."
                             />
                         )}
                     </div>
