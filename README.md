@@ -6,6 +6,21 @@ Instead of recording video responses, Vervue lets you practise behavioural inter
 
 I'm building Vervue as a personal project while preparing for software engineering graduate roles. The goal is to make behavioural interview preparation more practical by letting users practise, get feedback, and track their improvement over time.
 
+## What I've Learned
+
+- **Database security.** The Supabase key in the browser is public, so I learned to protect data with row level security and tested the policies, not just assumed they worked.
+- **Debugging with logs.** I found the slow last submit by reading Supabase logs and measuring where the time went, instead of guessing. Part of it was my database and server being in different regions.
+- **Background work.** I moved AI grading out of the request so users aren't kept waiting, and learned what can go wrong when work runs after the response is sent.
+- **Not trusting the browser.** The timer is enforced on the server, and answers are limited in the database, because anything in the browser can be changed.
+- **Working through issues and PRs.** I use branches, small pull requests and issues linked to fixes, even as a solo developer.
+
+## What I'm Learning Next
+
+- Moving the grading to Google Cloud and comparing it with the current setup
+- Writing unit tests and running them automatically with CI
+- Load testing to see where the app breaks
+- Rate limiting to protect the AI usage costs
+
 ## How It Works
 
 The basic idea is:
@@ -42,7 +57,11 @@ Vervue will focus on areas commonly assessed during behavioural interviews, incl
 
 ## Future Implementation
 - AI follow up questions
-- Dashboard summary of progress
+- Text-to-speech option during session to imitate real interviews
+- Dashboard analytics of progress (graphs, question weakness highlights, etc..)
+- AI speech for reading questions
+- Self camera view
+
 
 ## User Feedback
 
@@ -61,8 +80,6 @@ I've had friends test Vervue and I use what they tell me to improve it. Each ite
 - Tailwind CSS
 - Supabase
 - Google Gemini for grading
-
-## Getting Started
 
 ### Requirements
 
