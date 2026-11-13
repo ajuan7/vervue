@@ -44,13 +44,23 @@ Vervue will focus on areas commonly assessed during behavioural interviews, incl
 - AI follow up questions
 - Dashboard summary of progress
 
+## User Feedback
+
+I've had friends test Vervue and I use what they tell me to improve it. Each item links to the issue where it was fixed.
+
+| What testers said | What I changed |
+|---|---|
+| (Danny Q.) The last question took 10 to 15 seconds to submit and sometimes stalled | Moved grading to the background so submitting is quick 
+| (Keven N.) The submit button seemed to do nothing on an empty answer | Added a clear message instead of a hidden browser warning 
+| (Andrew N.) Add voice-to-text and improve the questions based on specific role and company you're applying to | N/A
+
 ## Tech Stack
 
 - Next.js
 - TypeScript
 - Tailwind CSS
 - Supabase
-- AI API
+- Google Gemini for grading
 
 ## Getting Started
 
