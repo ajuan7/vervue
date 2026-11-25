@@ -19,12 +19,37 @@ export async function completeSession(supabase: SupabaseClient, sessionId: strin
     }
 
     // Only the request that actually completed the session starts grading
+    // Using the GC grader URL, post with session ID
     if (data && data.length > 0) {
         after(async () => {
+            const graderUrl = process.env.GRADER_URL;
+
+            // No grader configured: grade inside the app, as before
+            if (!graderUrl) {
+                try {
+                    await generateSessionFeedback(sessionId, userId, supabase);
+                } catch (err) {
+                    console.error("FEEDBACK GENERATION ERROR:", err);
+                }
+                return;
+            }
+
             try {
-                await generateSessionFeedback(sessionId, userId, supabase);
+                const res = await fetch(`${graderUrl}/grade`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-grader-secret": process.env.GRADER_SECRET ?? "",
+                    },
+                    body: JSON.stringify({ sessionId }),
+                    signal: AbortSignal.timeout(55_000),
+                });
+
+                if (!res.ok) {
+                    console.error("GRADER ERROR", res.status, await res.text());
+                }
             } catch (err) {
-                console.error("FEEDBACK GENERATION ERROR:", err);
+                console.error("GRADER REQUEST FAILED", err);
             }
         });
     }
